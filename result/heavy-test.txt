@@ -1,0 +1,43 @@
+  █ THRESHOLDS
+
+    http_req_duration
+    ✓ 'p(95)<50' p(95)=7.17ms
+    ✓ 'p(99)<100' p(99)=17.2ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.00%
+
+    job_submit_success
+    ✓ 'rate>0.95' rate=100.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 1       0.002082/s
+    checks_succeeded...: 100.00% 1 out of 1
+    checks_failed......: 0.00%   0 out of 1
+
+    ✓ health check passed
+
+    CUSTOM
+    job_submit_success.............: 100.00% 55697 out of 55697
+
+    HTTP
+      { expected_response:true }...: avg=4.81ms   min=913.47µs med=4.17ms   max=108.82ms p(90)=6.21ms  p(95)=7.17ms
+    http_req_failed................: 0.00%   0 out of 55698
+    http_reqs......................: 55698   115.989284/s
+
+    EXECUTION
+    iteration_duration.............: avg=355.75ms min=203.51ms med=355.71ms max=574.8ms  p(90)=475.8ms p(95)=490.8ms
+    iterations.....................: 55697   115.987201/s
+    vus............................: 1       min=1              max=99
+    vus_max........................: 100     min=100            max=100
+
+    NETWORK
+    data_received..................: 32 MB   66 kB/s
+    data_sent......................: 17 MB   35 kB/s
+
+
+
+
+running (8m00.2s), 000/100 VUs, 55697 complete and 0 interrupted iterations

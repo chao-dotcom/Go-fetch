@@ -1,0 +1,219 @@
+syntax = "proto3";
+
+package taskqueue;
+
+option go_package = "taskqueue/internal/grpc/proto";
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+service JobService {
+  rpc SubmitJob(SubmitJobRequest) returns (SubmitJobResponse);
+  rpc GetJobStatus(GetJobStatusRequest) returns (Job);
+  rpc CancelJob(CancelJobRequest) returns (CancelJobResponse);
+  rpc StreamJobUpdates(StreamJobUpdatesRequest) returns (stream JobUpdate);
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse);
+}
+
+service WorkerService {
+  rpc RegisterWorker(RegisterWorkerRequest) returns (RegisterWorkerResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc GetWorkerStatus(GetWorkerStatusRequest) returns (Worker);
+  rpc ListWorkers(ListWorkersRequest) returns (ListWorkersResponse);
+  rpc DeregisterWorker(DeregisterWorkerRequest) returns (DeregisterWorkerResponse);
+}
+
+service QueueService {
+  rpc GetQueueStats(GetQueueStatsRequest) returns (QueueStats);
+  rpc ListQueues(ListQueuesRequest) returns (ListQueuesResponse);
+  rpc PurgeQueue(PurgeQueueRequest) returns (PurgeQueueResponse);
+}
+
+message SubmitJobRequest {
+  string type = 1;
+  google.protobuf.Struct payload = 2;
+  int32 priority = 3;
+  int32 max_attempts = 4;
+  string queue = 5;
+  int64 timeout_seconds = 6;
+}
+
+message SubmitJobResponse {
+  string job_id = 1;
+  JobStatus status = 2;
+  string message = 3;
+  google.protobuf.Timestamp queued_at = 4;
+}
+
+message GetJobStatusRequest {
+  string job_id = 1;
+}
+
+message CancelJobRequest {
+  string job_id = 1;
+  string reason = 2;
+}
+
+message CancelJobResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message StreamJobUpdatesRequest {
+  string job_id = 1;
+}
+
+message JobUpdate {
+  string job_id = 1;
+  JobStatus status = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string message = 4;
+  google.protobuf.Struct result = 5;
+}
+
+message ListJobsRequest {
+  JobStatus status = 1;
+  string type = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+  google.protobuf.Timestamp from_time = 5;
+  google.protobuf.Timestamp to_time = 6;
+}
+
+message ListJobsResponse {
+  repeated Job jobs = 1;
+  int32 total = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message Job {
+  string id = 1;
+  string type = 2;
+  google.protobuf.Struct payload = 3;
+  JobStatus status = 4;
+  int32 priority = 5;
+  int32 attempts = 6;
+  int32 max_attempts = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp started_at = 10;
+  google.protobuf.Timestamp finished_at = 11;
+  google.protobuf.Struct result = 12;
+  string error = 13;
+  string worker_id = 14;
+  int64 processing_time_ms = 15;
+}
+
+enum JobStatus {
+  JOB_STATUS_UNSPECIFIED = 0;
+  JOB_STATUS_QUEUED = 1;
+  JOB_STATUS_RUNNING = 2;
+  JOB_STATUS_SUCCEEDED = 3;
+  JOB_STATUS_FAILED = 4;
+  JOB_STATUS_RETRYING = 5;
+  JOB_STATUS_CANCELLED = 6;
+}
+
+message RegisterWorkerRequest {
+  string worker_id = 1;
+  string hostname = 2;
+  int32 pool_size = 3;
+  repeated string queues = 4;
+  map<string, string> metadata = 5;
+}
+
+message RegisterWorkerResponse {
+  bool success = 1;
+  string message = 2;
+  google.protobuf.Timestamp registered_at = 3;
+}
+
+message HeartbeatRequest {
+  string worker_id = 1;
+  int32 active_jobs = 2;
+  int64 total_processed = 3;
+  int64 total_failed = 4;
+  WorkerStatus status = 5;
+  google.protobuf.Timestamp timestamp = 6;
+}
+
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  repeated string pending_jobs = 2;
+}
+
+message GetWorkerStatusRequest {
+  string worker_id = 1;
+}
+
+message ListWorkersRequest {
+  WorkerStatus status = 1;
+}
+
+message ListWorkersResponse {
+  repeated Worker workers = 1;
+  int32 total = 2;
+}
+
+message Worker {
+  string id = 1;
+  string hostname = 2;
+  WorkerStatus status = 3;
+  int32 pool_size = 4;
+  int32 active_jobs = 5;
+  int64 total_processed = 6;
+  int64 total_failed = 7;
+  google.protobuf.Timestamp started_at = 8;
+  google.protobuf.Timestamp last_heartbeat = 9;
+  repeated string queues = 10;
+  map<string, string> metadata = 11;
+}
+
+enum WorkerStatus {
+  WORKER_STATUS_UNSPECIFIED = 0;
+  WORKER_STATUS_ACTIVE = 1;
+  WORKER_STATUS_IDLE = 2;
+  WORKER_STATUS_DEAD = 3;
+  WORKER_STATUS_DRAINING = 4;
+}
+
+message DeregisterWorkerRequest {
+  string worker_id = 1;
+  string reason = 2;
+}
+
+message DeregisterWorkerResponse {
+  bool success = 1;
+}
+
+message GetQueueStatsRequest {
+  string queue_name = 1;
+}
+
+message QueueStats {
+  string name = 1;
+  int64 depth = 2;
+  int64 processing_rate = 3;
+  double avg_latency_ms = 4;
+  int64 total_processed = 5;
+  int64 total_failed = 6;
+  google.protobuf.Timestamp last_updated = 7;
+}
+
+message ListQueuesRequest {}
+
+message ListQueuesResponse {
+  repeated QueueStats queues = 1;
+}
+
+message PurgeQueueRequest {
+  string queue_name = 1;
+  bool confirm = 2;
+}
+
+message PurgeQueueResponse {
+  bool success = 1;
+  int64 jobs_purged = 2;
+}
+
